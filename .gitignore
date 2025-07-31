@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+
+# Production builds
+client/build/
+dist/
+
+# Environment variables
+.env*
+!.env.example
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+*.lcov
+.nyc_output
+
+# Cache directories
+.npm
+.eslintcache
+
+# Yarn files
+.yarn-integrity
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Browser automation data
+screenshots/
+browser-data/
+user-data-dir/
+
+# Temporary files
+tmp/
+temp/
+.tmp/ 

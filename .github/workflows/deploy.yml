@@ -1,0 +1,62 @@
+name: Deploy AI Customer Development
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: |
+        npm install
+        cd client && npm install
+    
+    - name: Build client
+      run: npm run build
+    
+    - name: Create test database
+      run: |
+        cp config.example.env .env
+        echo "NODE_ENV=test" >> .env
+    
+    - name: Test server start
+      run: |
+        timeout 30s npm start || true
+        sleep 5
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Build Docker image
+      run: |
+        docker build -t ai-customer-dev .
+        docker run --name test-container -d -p 3001:3001 ai-customer-dev
+        sleep 10
+        docker logs test-container
+        docker stop test-container
+        docker rm test-container

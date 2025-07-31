@@ -1,0 +1,51 @@
+{
+  "name": "ai-customer-development",
+  "version": "1.0.0",
+  "description": "AI自动客户开发系统 - 智能搜索买手店信息并自动发送开发信",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server:dev": "nodemon server/index.js",
+    "client:dev": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "start": "NODE_ENV=production node server/index.js",
+    "start:dev": "NODE_ENV=development node server/index.js",
+    "install:all": "npm install && cd client && npm install",
+    "setup": "npm run install:all && npm run build",
+    "deploy": "npm run setup && npm start",
+    "docker:build": "docker build -t ai-customer-dev .",
+    "docker:run": "docker-compose up -d",
+    "docker:stop": "docker-compose down",
+    "clean": "rm -rf node_modules client/node_modules client/build logs/*.log database.sqlite"
+  },
+  "keywords": ["ai", "automation", "email", "customer", "development", "playwright"],
+  "author": "AI Customer Dev Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "sqlite3": "^5.1.6",
+    "sequelize": "^6.35.2",
+    "playwright": "^1.40.0",
+    "openai": "^4.20.1",
+    "nodemailer": "^6.9.7",
+    "cheerio": "^1.0.0-rc.12",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.1",
+    "moment": "^2.29.4",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "puppeteer-extra-plugin-anonymize-ua": "^2.4.6",
+    "fake-useragent": "^1.0.1",
+    "proxy-agent": "^6.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 
