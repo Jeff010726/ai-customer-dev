@@ -38,7 +38,7 @@ router.post('/', async (req, res) => {
     const openai = new OpenAI({
       apiKey: apiKey,
       baseURL: 'https://api.deepseek.com/v1',
-      timeout: 30000,
+      timeout: 60000  // 增加超时时间到60秒
     });
     
     // 构建搜索关键词

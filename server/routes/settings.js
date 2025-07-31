@@ -133,7 +133,7 @@ router.post('/test-ai', async (req, res) => {
     const openai = new OpenAI({
       apiKey: apiKey,
       baseURL: 'https://api.deepseek.com/v1',
-      timeout: 30000, // 30秒超时
+      timeout: 60000, // 30秒超时
     });
     
     // 测试API调用
