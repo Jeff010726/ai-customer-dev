@@ -1,19 +1,13 @@
-# Nixpacks配置 - Railway部署优化
+# Railway极简配置
 
 [phases.setup]
 nixPkgs = ['nodejs-18_x']
 
 [phases.install]
-cmds = ['npm install']
-
-[phases.build]
-cmds = [
-  'cd client && npm install',
-  'cd client && npm run build'
-]
+cmds = ['npm install express --save']
 
 [start]
-cmd = 'node start.js'
+cmd = 'node railway-server.js'
 
 [variables]
 NODE_ENV = 'production'
