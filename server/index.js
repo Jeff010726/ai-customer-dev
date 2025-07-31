@@ -21,9 +21,9 @@ const PORT = process.env.PORT || 3001;
 // Railway部署优化 - 监听所有接口
 const HOST = process.env.HOST || '0.0.0.0';
 
-// 中间件配置
+// 中间件配置 - Railway优化
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: true, // Railway部署时允许所有域名
   credentials: true
 }));
 
@@ -44,38 +44,17 @@ app.use('/api/search', searchRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/reports', reportsRoutes);
 
-// 健康检查 - Railway部署专用
+// 超简单健康检查 - Railway专用
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    port: PORT
-  });
+  res.status(200).send('OK');
 });
 
-// Railway根路径健康检查
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-// Railway根路径
 app.get('/', (req, res) => {
-  if (process.env.NODE_ENV === 'production') {
-    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-  } else {
-    res.json({ 
-      message: 'AI客户开发系统 API服务器',
-      status: 'running',
-      endpoints: {
-        health: '/api/health',
-        campaigns: '/api/campaigns',
-        customers: '/api/customers',
-        search: '/api/search'
-      }
-    });
-  }
+  res.status(200).send('AI Customer Development System - Running');
 });
 
 // 静态文件服务 (生产环境)
@@ -129,12 +108,20 @@ async function startServer() {
     logger.info('数据库模型同步完成');
     
     // 启动服务器 - Railway优化
-    app.listen(PORT, HOST, () => {
-      logger.info(`🚀 服务器运行在 ${HOST}:${PORT}`);
-      logger.info(`📊 健康检查：/api/health`);
-      logger.info(`🌍 环境：${process.env.NODE_ENV || 'development'}`);
-      logger.info(`💾 数据库：${process.env.DATABASE_URL || 'SQLite本地'}`);
+    const server = app.listen(PORT, HOST, () => {
+      console.log(`🚀 Server running on ${HOST}:${PORT}`);
+      console.log(`📊 Health check: /health`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`💾 Database: ${process.env.DATABASE_URL || 'SQLite'}`);
+      
+      // Railway健康检查响应
+      if (process.env.NODE_ENV === 'production') {
+        console.log('✅ Railway deployment ready!');
+      }
     });
+    
+    // 设置超时
+    server.timeout = 30000;
     
   } catch (error) {
     logger.error('服务器启动失败:', error);
