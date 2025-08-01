@@ -26,6 +26,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  FormLabel,
+  FormGroup,
+  Checkbox,
+  Tooltip,
+  Icon,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -44,7 +49,7 @@ const initialCampaignState = {
   name: '',
   description: '',
   search_keywords: '',
-  search_platforms: 'Google,LinkedIn',
+  search_platforms: ['google', 'linkedin'], // 改为数组格式
   email_config: {
     product_description: '',
     service_description: '',
@@ -83,6 +88,15 @@ export default function Campaigns() {
   const { data: campaignsData, isLoading, error } = useQuery(
     'campaigns',
     () => campaignApi.getAll(),
+    {
+      refetchOnWindowFocus: false,
+    }
+  )
+
+  // 获取支持的搜索平台列表
+  const { data: platformsData } = useQuery(
+    'platforms', 
+    () => campaignApi.getPlatforms(),
     {
       refetchOnWindowFocus: false,
     }
@@ -144,7 +158,7 @@ export default function Campaigns() {
     const campaignData = {
       ...newCampaign,
       search_keywords: newCampaign.search_keywords.split(',').map(k => k.trim()).filter(k => k),
-      search_platforms: newCampaign.search_platforms.split(',').map(p => p.trim()).filter(p => p),
+      search_platforms: newCampaign.search_platforms, // 已经是数组格式
     }
 
     createMutation.mutate(campaignData)
@@ -388,14 +402,68 @@ export default function Campaigns() {
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="搜索平台"
-                value={newCampaign.search_platforms}
-                onChange={(e) => setNewCampaign({ ...newCampaign, search_platforms: e.target.value })}
-                placeholder="例如：Google,LinkedIn,1688 (用逗号分隔)"
-                helperText="指定要搜索的平台，用逗号分隔"
-              />
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">搜索平台</FormLabel>
+                <Box sx={{ mt: 1 }}>
+                  {platformsData?.data && (
+                    <Grid container spacing={1}>
+                      {/* 按分类分组显示 */}
+                      {Object.entries(
+                        platformsData.data.reduce((acc, platform) => {
+                          if (!acc[platform.category]) acc[platform.category] = [];
+                          acc[platform.category].push(platform);
+                          return acc;
+                        }, {})
+                      ).map(([category, platforms]) => (
+                        <Grid item xs={12} key={category}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                            {category}
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                            {platforms.map((platform) => (
+                              <Tooltip key={platform.id} title={platform.description} placement="top">
+                                <FormControlLabel
+                                  control={
+                                    <Checkbox
+                                      checked={newCampaign.search_platforms.includes(platform.id)}
+                                      onChange={(e) => {
+                                        const isChecked = e.target.checked;
+                                        const currentPlatforms = newCampaign.search_platforms;
+                                        
+                                        if (isChecked) {
+                                          setNewCampaign({
+                                            ...newCampaign,
+                                            search_platforms: [...currentPlatforms, platform.id]
+                                          });
+                                        } else {
+                                          setNewCampaign({
+                                            ...newCampaign,
+                                            search_platforms: currentPlatforms.filter(p => p !== platform.id)
+                                          });
+                                        }
+                                      }}
+                                      size="small"
+                                    />
+                                  }
+                                  label={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                      <Icon fontSize="small">{platform.icon}</Icon>
+                                      <Typography variant="body2">{platform.name}</Typography>
+                                    </Box>
+                                  }
+                                />
+                              </Tooltip>
+                            ))}
+                          </Box>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  )}
+                  <Typography variant="caption" color="text.secondary">
+                    已选择 {newCampaign.search_platforms.length} 个平台
+                  </Typography>
+                </Box>
+              </FormControl>
             </Grid>
             
             {/* 邮件配置 */}

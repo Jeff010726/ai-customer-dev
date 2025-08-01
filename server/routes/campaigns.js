@@ -4,6 +4,97 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 
+// 支持的搜索平台配置
+const SUPPORTED_PLATFORMS = [
+  {
+    id: 'google',
+    name: 'Google',
+    description: '全球最大的搜索引擎，适合发现各类企业信息',
+    icon: 'search',
+    category: '搜索引擎'
+  },
+  {
+    id: 'linkedin',
+    name: 'LinkedIn',
+    description: '专业商务社交平台，精准获取企业决策人信息',
+    icon: 'business',
+    category: '商务平台'
+  },
+  {
+    id: 'instagram',
+    name: 'Instagram',
+    description: '时尚品牌聚集地，适合发现潮流买手店',
+    icon: 'photo_camera',
+    category: '社交媒体'
+  },
+  {
+    id: 'bing',
+    name: 'Bing', 
+    description: '微软搜索引擎，提供不同视角的搜索结果',
+    icon: 'search',
+    category: '搜索引擎'
+  },
+  {
+    id: 'duckduckgo',
+    name: 'DuckDuckGo',
+    description: '注重隐私的搜索引擎，获取独特搜索结果',
+    icon: 'privacy_tip',
+    category: '搜索引擎'
+  },
+  {
+    id: '1688',
+    name: '1688',
+    description: '阿里巴巴B2B平台，适合寻找制造商和供应商',
+    icon: 'factory',
+    category: 'B2B平台'
+  },
+  {
+    id: 'alibaba',
+    name: 'Alibaba.com',
+    description: '全球领先的B2B贸易平台',
+    icon: 'language',
+    category: 'B2B平台'
+  },
+  {
+    id: 'facebook',
+    name: 'Facebook',
+    description: '全球最大社交平台，丰富的企业页面信息',
+    icon: 'facebook',
+    category: '社交媒体'
+  },
+  {
+    id: 'twitter',
+    name: 'Twitter/X',
+    description: '实时信息平台，获取企业最新动态',
+    icon: 'alternate_email',
+    category: '社交媒体'
+  },
+  {
+    id: 'ai-search',
+    name: 'AI智能搜索',
+    description: '内置AI搜索引擎，智能分析和生成客户信息',
+    icon: 'smart_toy',
+    category: 'AI工具'
+  }
+];
+
+// 获取支持的搜索平台列表
+router.get('/platforms', async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: SUPPORTED_PLATFORMS,
+      message: '获取支持的搜索平台成功'
+    });
+  } catch (error) {
+    console.error('获取搜索平台失败:', error);
+    res.status(500).json({
+      success: false,
+      error: { message: '获取搜索平台失败' }
+    });
+  }
+});
+
 // 获取所有活动
 router.get('/', async (req, res) => {
   try {

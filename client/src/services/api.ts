@@ -47,6 +47,9 @@ export const campaignApi = {
   // 获取单个活动
   getById: (id: string) => api.get(`/campaigns/${id}`),
   
+  // 获取支持的搜索平台列表
+  getPlatforms: () => api.get('/campaigns/platforms'),
+  
   // 创建活动
   create: (data: any) => api.post('/campaigns', data),
   
