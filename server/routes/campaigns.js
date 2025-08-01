@@ -280,7 +280,8 @@ router.post('/:id/start', async (req, res) => {
         
         // 模拟调用搜索API
         const axios = require('axios');
-        const searchUrl = `http://localhost:${process.env.PORT || 3001}/api/search`;
+        const baseUrl = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 3001}`;
+        const searchUrl = `${baseUrl}/api/search`;
         
         const searchResponse = await axios.post(searchUrl, searchParams);
         

@@ -266,7 +266,8 @@ class TaskScheduler {
 
       // 调用搜索API
       const axios = require('axios');
-      const searchUrl = `http://localhost:${process.env.PORT || 3001}/api/search`;
+      const baseUrl = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 3001}`;
+      const searchUrl = `${baseUrl}/api/search`;
       
       const searchParams = {
         campaignId: task.campaign_id,
@@ -606,7 +607,8 @@ ${senderTitle}`
             
             // 直接调用搜索API
             const axios = require('axios');
-            const searchUrl = `http://localhost:${process.env.PORT || 3001}/api/search`;
+            const baseUrl = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 3001}`;
+            const searchUrl = `${baseUrl}/api/search`;
             
             const searchParams = {
               campaignId: campaign.id,
