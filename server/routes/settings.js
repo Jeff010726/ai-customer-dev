@@ -121,12 +121,19 @@ router.post('/test-email', async (req, res) => {
 // 测试AI配置
 router.post('/test-ai', async (req, res) => {
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
+    // 首先从数据库获取设置
+    const apiKeySetting = await Setting.findOne({ where: { key: 'openai_api_key' } });
+    const modelSetting = await Setting.findOne({ where: { key: 'openai_model' } });
     
-    if (!apiKey || apiKey === 'your_openai_api_key_here') {
+    // 优先使用数据库中的API密钥，如果没有则使用环境变量
+    const apiKey = apiKeySetting ? apiKeySetting.value : process.env.OPENAI_API_KEY;
+    
+    const model = modelSetting ? modelSetting.value : (process.env.OPENAI_MODEL || 'deepseek-chat');
+    
+    if (!apiKey || apiKey === 'your_openai_api_key_here' || apiKey === 'your_deepseek_api_key_here') {
       return res.status(400).json({
         success: false,
-        error: { message: 'AI API密钥未配置或无效' }
+        error: { message: 'AI API密钥未配置或无效。请在设置页面中输入您的DeepSeek API密钥。' }
       });
     }
     
@@ -139,7 +146,7 @@ router.post('/test-ai', async (req, res) => {
     // 测试API调用
     const completion = await openai.chat.completions.create({
       messages: [{ role: "user", content: "请回复'AI连接成功！'" }],
-      model: process.env.OPENAI_MODEL || "deepseek-chat",
+      model: model,
       max_tokens: 20,
       temperature: 0
     });
