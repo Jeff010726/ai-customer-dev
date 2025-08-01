@@ -121,25 +121,28 @@ router.post('/', async (req, res) => {
 请严格按照以下JSON格式返回：
 [
   {
-    "name": "联系人姓名",
+    "name": "联系人姓名（决策人，如CEO、采购总监等）",
     "email": "contact@company.com", 
     "company": "公司名称",
     "website": "https://company.com",
     "region": "城市, 国家",
-    "description": "公司简介和业务特色",
+    "description": "详细描述公司的：1)主营业务和特色产品 2)目标客户群体 3)公司规模(如员工数、门店数) 4)经营理念或品牌定位 5)最近的发展动态或需求",
     "industry": "${industryContext.industry}",
-    "source_platform": "Google/LinkedIn/Instagram",
+    "source_platform": "Google/LinkedIn/Instagram/Facebook/1688/Alibaba",
     "phone": "+1-XXX-XXX-XXXX"
   }
 ]
 
 重要要求：
-- 客户必须与"${keywordArray.join(', ')}"关键词直接相关
-- 确保每个邮箱地址都是唯一的
-- 公司名称要有创意且真实，体现${industryContext.businessContext}特色
-- 网站地址要与公司名称匹配
-- 联系人姓名要符合地区特色
-- 所有客户都必须是${industryContext.industry}领域的专业客户`;
+- description字段必须包含丰富的业务细节，至少50字以上
+- 要体现每个客户的独特性，如：
+  * 专注的细分市场（如专做欧洲设计师品牌、主打可持续时尚等）
+  * 经营特色（如买手店、精品店、连锁店、电商等）
+  * 目标客群（如Z世代、高端商务人士、潮流爱好者等）
+  * 采购需求（如寻找新供应商、拓展产品线、降低成本等）
+- 联系人要是有决策权的高管，职位要明确
+- 根据不同的source_platform调整发现客户的合理性
+- 确保信息真实可信，像是真实的市场调研结果`;
 
     console.log(`🤖 开始AI客户搜索 - 活动: ${campaign.name}`);
     console.log(`🎯 关键词: ${keywordArray.join(', ')}`);
