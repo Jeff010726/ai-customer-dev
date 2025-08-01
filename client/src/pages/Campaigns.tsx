@@ -57,6 +57,7 @@ const initialCampaignState = {
     tone: 'friendly',
     sender_name: '',
     sender_title: '',
+    company_name: '',
     company_info: '',
     call_to_action: '安排一次简短的在线会议',
     custom_prompt: ''
@@ -152,6 +153,16 @@ export default function Campaigns() {
   const handleCreateCampaign = () => {
     if (!newCampaign.name.trim()) {
       enqueueSnackbar('请输入活动名称', { variant: 'warning' })
+      return
+    }
+
+    if (!newCampaign.email_config?.sender_name?.trim()) {
+      enqueueSnackbar('请输入发件人姓名', { variant: 'warning' })
+      return
+    }
+
+    if (!newCampaign.email_config?.company_name?.trim()) {
+      enqueueSnackbar('请输入公司名称', { variant: 'warning' })
       return
     }
 
@@ -505,13 +516,15 @@ export default function Campaigns() {
                     <Grid item xs={6}>
                       <TextField
                         fullWidth
-                        label="发件人姓名"
+                        required
+                        label="发件人姓名 *"
                         value={newCampaign.email_config?.sender_name || ''}
                         onChange={(e) => setNewCampaign({
                           ...newCampaign,
                           email_config: { ...(newCampaign.email_config || {}), sender_name: e.target.value }
                         })}
                         placeholder="例如：张三"
+                        helperText="AI将使用此姓名在邮件中署名"
                       />
                     </Grid>
                     <Grid item xs={6}>
@@ -524,6 +537,20 @@ export default function Campaigns() {
                           email_config: { ...(newCampaign.email_config || {}), sender_title: e.target.value }
                         })}
                         placeholder="例如：销售总监"
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        required
+                        label="公司名称 *"
+                        value={newCampaign.email_config?.company_name || ''}
+                        onChange={(e) => setNewCampaign({
+                          ...newCampaign,
+                          email_config: { ...(newCampaign.email_config || {}), company_name: e.target.value }
+                        })}
+                        placeholder="例如：上海智慧时尚科技有限公司"
+                        helperText="AI将在邮件中提及此公司名称"
                       />
                     </Grid>
                     <Grid item xs={12}>

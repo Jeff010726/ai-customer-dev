@@ -1,5 +1,5 @@
 const express = require('express');
-const { Email, Customer, Campaign, EmailTemplate } = require('../models');
+const { Email, Customer, Campaign, EmailTemplate, Setting } = require('../models');
 const nodemailer = require('nodemailer');
 const OpenAI = require('openai');
 
@@ -83,9 +83,14 @@ router.post('/generate', async (req, res) => {
     const campaign = customer.campaign || await Campaign.findByPk(campaignId);
     const emailConfig = campaign?.email_config || {};
     
-    // 检查API配置
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey || apiKey === 'your_deepseek_api_key_here') {
+    // 检查API配置 - 优先从数据库获取，然后从环境变量
+    const apiKeySetting = await Setting.findOne({ where: { key: 'openai_api_key' } });
+    const modelSetting = await Setting.findOne({ where: { key: 'openai_model' } });
+    
+    const apiKey = apiKeySetting ? apiKeySetting.value : process.env.OPENAI_API_KEY;
+    const model = modelSetting ? modelSetting.value : (process.env.OPENAI_MODEL || 'deepseek-chat');
+    
+    if (!apiKey || apiKey === 'your_deepseek_api_key_here' || apiKey === 'your_openai_api_key_here') {
       return res.status(400).json({
         success: false,
         error: { message: 'AI API密钥未配置，请先在系统设置中配置DeepSeek API密钥' }
@@ -95,7 +100,7 @@ router.post('/generate', async (req, res) => {
     const openai = new OpenAI({
       apiKey: apiKey,
       baseURL: 'https://api.deepseek.com/v1',
-      timeout: 30000,
+      timeout: 60000,
     });
     
     // 构建详细的客户信息和发件人信息
@@ -114,6 +119,7 @@ router.post('/generate', async (req, res) => {
     const senderInfo = {
       name: emailConfig.sender_name || '商务拓展经理',
       title: emailConfig.sender_title || '业务发展部',
+      company_name: emailConfig.company_name || '',
       company_info: emailConfig.company_info || '',
       product_desc: emailConfig.product_description || '',
       service_desc: emailConfig.service_description || '',
@@ -136,10 +142,11 @@ router.post('/generate', async (req, res) => {
     const openingLine = platformStrategy[customerInfo.source_platform] || '了解到贵公司的业务';
     
     // 构建更个性化的提示词
-    const prompt = `请以${senderInfo.name}（${senderInfo.title}）的身份，为我们公司写一封个性化的商务开发信。
+    const prompt = `请以${senderInfo.name}（${senderInfo.title}）的身份，代表${senderInfo.company_name}公司写一封个性化的商务开发信。
 
 发件人信息：
 - 姓名职位: ${senderInfo.name} - ${senderInfo.title}
+- 公司名称: ${senderInfo.company_name}
 - 公司介绍: ${senderInfo.company_info}
 - 产品优势: ${senderInfo.product_desc}
 - 服务特色: ${senderInfo.service_desc}
@@ -156,19 +163,21 @@ router.post('/generate', async (req, res) => {
 写作要求：
 1. 写作风格: ${senderInfo.writing_style}（professional专业/casual轻松/enthusiastic热情/direct直接/formal正式）
 2. 语气基调: ${senderInfo.tone}（friendly友好/persuasive说服力强/informative信息丰富/humorous幽默/empathetic有同理心）
-3. 开头要提到从哪里了解到客户（${openingLine}）
-4. 根据客户的行业特点和业务描述，找到契合点
-5. 突出我们的产品/服务如何帮助客户解决问题或提升业务
-6. 邮件要像真人写的，自然流畅，避免模板化
-7. 根据客户所在地区调整用语习惯
-8. 结尾包含明确的行动号召: ${senderInfo.call_to_action}
-9. 整体长度控制在150-200字左右
+3. 开头要自然提到从哪里了解到客户（${openingLine}）
+4. 在邮件正文中自然地提及发件人姓名和公司名称，增强记忆点
+5. 根据客户的行业特点和业务描述，找到业务契合点
+6. 突出我们的产品/服务如何帮助客户解决问题或提升业务
+7. 邮件要像真人写的，自然流畅，避免任何模板化表达
+8. 根据客户所在地区调整用语习惯和商务礼仪
+9. 结尾包含明确的行动号召: ${senderInfo.call_to_action}
+10. 邮件末尾必须包含完整署名：${senderInfo.name} | ${senderInfo.title} | ${senderInfo.company_name}
+11. 整体长度控制在150-220字左右，内容精炼有力
 
 ${emailConfig.custom_prompt ? `额外要求: ${emailConfig.custom_prompt}` : ''}
 
 请生成一封看起来完全像真人写的个性化邮件。格式如下：
 主题：[简洁有吸引力的邮件主题，包含客户公司名或行业关键词]
-正文：[自然、个性化的邮件正文]`;
+正文：[自然、个性化的邮件正文，结尾必须包含完整署名：${senderInfo.name} | ${senderInfo.title} | ${senderInfo.company_name}]`;
     
     // 调用AI生成内容
     const completion = await openai.chat.completions.create({
@@ -177,18 +186,21 @@ ${emailConfig.custom_prompt ? `额外要求: ${emailConfig.custom_prompt}` : ''}
           role: "system",
           content: `你是一个经验丰富的商务拓展专家，擅长撰写高度个性化的客户开发邮件。
 你的邮件特点是：
-1. 像真人写的，每封邮件都不一样
+1. 像真人写的，每封邮件都不一样，绝不使用模板化语言
 2. 会根据客户的具体情况调整内容和语气
-3. 善于找到与客户的共鸣点
-4. 语言自然流畅，不使用模板化的词句
-5. 懂得不同地区的商务礼仪和表达习惯`
+3. 善于找到与客户的共鸣点和业务切入点
+4. 语言自然流畅，体现发件人的个人风格
+5. 懂得不同地区的商务礼仪和表达习惯
+6. 在邮件中自然地提及发件人姓名和公司名称，让收件人记住你们
+7. 邮件结尾要包含发件人的完整署名（姓名+职位+公司）
+8. 根据发件人的职位和公司特点调整语言风格和专业度`
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      model: process.env.OPENAI_MODEL || "deepseek-chat",
+      model: model,
       max_tokens: 800,
       temperature: 0.8  // 提高温度以增加创造性
     });

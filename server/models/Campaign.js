@@ -59,6 +59,7 @@ module.exports = (sequelize, DataTypes) => {
         tone: 'friendly',
         sender_name: '',
         sender_title: '',
+        company_name: '',
         company_info: '',
         call_to_action: '',
         custom_prompt: ''
