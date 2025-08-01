@@ -80,7 +80,7 @@ router.post('/test-email', async (req, res) => {
     const transporter = nodemailer.createTransport({
       host: host,
       port: parseInt(port),
-      secure: false,
+      secure: parseInt(port) === 465, // 465端口使用SSL，587端口使用TLS
       auth: {
         user: user,
         pass: pass

@@ -373,7 +373,7 @@ export default function Settings() {
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={settings.random_delay}
+                        checked={Boolean(settings.random_delay)}
                         onChange={(e) => handleInputChange('random_delay', e.target.checked)}
                       />
                     }
@@ -387,7 +387,7 @@ export default function Settings() {
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={settings.human_simulation}
+                        checked={Boolean(settings.human_simulation)}
                         onChange={(e) => handleInputChange('human_simulation', e.target.checked)}
                       />
                     }
@@ -401,7 +401,7 @@ export default function Settings() {
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={settings.user_agent_rotation}
+                        checked={Boolean(settings.user_agent_rotation)}
                         onChange={(e) => handleInputChange('user_agent_rotation', e.target.checked)}
                       />
                     }

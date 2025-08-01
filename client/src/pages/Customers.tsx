@@ -21,6 +21,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  TablePagination,
 } from '@mui/material'
 import {
   Email,
@@ -35,6 +36,8 @@ export default function Customers() {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
   const [emailDialogOpen, setEmailDialogOpen] = useState(false)
   const [generatedEmail, setGeneratedEmail] = useState<any>(null)
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(20)
 
   const queryClient = useQueryClient()
   const { enqueueSnackbar } = useSnackbar()
@@ -124,7 +127,7 @@ export default function Customers() {
 
   if (error) {
     return (
-      <Box>
+      <Box sx={{ width: '100%', maxWidth: 'none' }}>
         <Typography variant="h4" component="h1" gutterBottom>
           客户管理
         </Typography>
@@ -136,7 +139,7 @@ export default function Customers() {
   }
 
   return (
-    <Box>
+    <Box sx={{ width: '100%', maxWidth: 'none' }}>
       <Typography variant="h4" component="h1" gutterBottom>
         客户管理
       </Typography>
@@ -203,7 +206,9 @@ export default function Customers() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {customersData.data.map((customer: any) => (
+                  {customersData.data
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((customer: any) => (
                     <TableRow key={customer.id}>
                       <TableCell>{customer.name || '未知'}</TableCell>
                       <TableCell>{customer.email}</TableCell>
@@ -237,6 +242,20 @@ export default function Customers() {
                   ))}
                 </TableBody>
               </Table>
+              <TablePagination
+                rowsPerPageOptions={[10, 20, 50]}
+                component="div"
+                count={customersData.data.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={(event, newPage) => setPage(newPage)}
+                onRowsPerPageChange={(event) => {
+                  setRowsPerPage(parseInt(event.target.value, 10));
+                  setPage(0);
+                }}
+                labelRowsPerPage="每页显示:"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} 共 ${count} 条`}
+              />
             </TableContainer>
           )}
         </CardContent>

@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Campaigns from './pages/Campaigns'
 import Customers from './pages/Customers'
 import Settings from './pages/Settings'
+import Tasks from './pages/Tasks'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/campaigns" element={<Campaigns />} />
           <Route path="/customers" element={<Customers />} />
+          <Route path="/tasks" element={<Tasks />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </Layout>

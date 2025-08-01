@@ -139,7 +139,7 @@ module.exports = (sequelize, DataTypes) => {
     campaign_id: {
       type: DataTypes.UUID,
       references: {
-        model: 'Campaign',
+        model: 'campaigns',
         key: 'id'
       },
       comment: '关联活动ID'

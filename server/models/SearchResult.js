@@ -50,14 +50,14 @@ module.exports = (sequelize, DataTypes) => {
     campaign_id: {
       type: DataTypes.UUID,
       references: {
-        model: 'Campaign',
+        model: 'campaigns',
         key: 'id'
       }
     },
     customer_id: {
       type: DataTypes.UUID,
       references: {
-        model: 'Customer',
+        model: 'customers',
         key: 'id'
       }
     }

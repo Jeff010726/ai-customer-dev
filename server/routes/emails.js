@@ -172,8 +172,8 @@ router.post('/generate', async (req, res) => {
     const email = await Email.create({
       subject: subject,
       content: content.trim(),
-      from_email: process.env.SMTP_USER || 'your@email.com',
-      from_name: '业务开发团队',
+      from_email: process.env.FROM_EMAIL || process.env.SMTP_USER || 'jeff@aimorelogy.com',
+      from_name: process.env.FROM_NAME || 'AI客户开发系统',
       to_email: customer.email,
       to_name: customer.name,
       status: 'draft',
@@ -261,28 +261,38 @@ router.post('/send', async (req, res) => {
       });
     }
     
-    // 检查SMTP配置
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    // 获取邮箱配置
+    const { getEmailConfig, validateEmailConfig } = require('../utils/emailConfig');
+    const emailConfig = await getEmailConfig();
+    
+    if (!validateEmailConfig(emailConfig)) {
       return res.status(400).json({
         success: false,
         error: { message: 'SMTP邮箱配置不完整，请先在系统设置中配置邮箱' }
       });
     }
     
-    // 创建邮件传输器
+    console.log('=== 邮件传输器配置调试 ===');
+    console.log('使用的邮箱配置:', {
+      host: emailConfig.host,
+      port: emailConfig.port,
+      user: emailConfig.auth.user,
+      secure: emailConfig.secure
+    });
+    
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+      host: emailConfig.host,
+      port: emailConfig.port,
+      secure: emailConfig.secure,
+      auth: emailConfig.auth,
+      tls: {
+        rejectUnauthorized: false
       }
     });
     
     // 发送邮件
     const mailOptions = {
-      from: `"${email.from_name}" <${email.from_email}>`,
+      from: `"${email.from_name || emailConfig.from_name}" <${emailConfig.from_email}>`,
       to: email.to_email,
       subject: email.subject,
       text: email.content,

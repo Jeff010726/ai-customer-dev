@@ -19,6 +19,7 @@ import {
   Campaign as CampaignIcon,
   People as PeopleIcon,
   Settings as SettingsIcon,
+  ListAlt as TaskIcon,
 } from '@mui/icons-material'
 import { useNavigate, useLocation } from 'react-router-dom'
 
@@ -28,6 +29,7 @@ const menuItems = [
   { text: '仪表板', icon: <DashboardIcon />, path: '/' },
   { text: '活动管理', icon: <CampaignIcon />, path: '/campaigns' },
   { text: '客户管理', icon: <PeopleIcon />, path: '/customers' },
+  { text: '任务管理', icon: <TaskIcon />, path: '/tasks' },
   { text: '系统设置', icon: <SettingsIcon />, path: '/settings' },
 ]
 
@@ -124,7 +126,7 @@ export default function Layout({ children }: LayoutProps) {
       </Box>
       <Box
         component="main"
-        sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
+        sx={{ flexGrow: 1, p: 3, width: '100%', maxWidth: 'none' }}
       >
         <Toolbar />
         {children}

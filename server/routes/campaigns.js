@@ -107,7 +107,9 @@ router.post('/', async (req, res) => {
       send_strategy,
       start_date,
       end_date,
-      settings
+      settings,
+      email_config,
+      automation_config
     } = req.body;
     
     // 验证必填字段
@@ -121,6 +123,11 @@ router.post('/', async (req, res) => {
     const campaign = await Campaign.create({
       name,
       description: description || '',
+      search_platforms: search_platforms || [],
+      search_keywords: search_keywords || [],
+      search_filters: search_filters || {},
+      email_config: email_config || {},
+      automation_config: automation_config || {},
       status: 'draft'
     });
     

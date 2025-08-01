@@ -97,7 +97,7 @@ module.exports = (sequelize, DataTypes) => {
     campaign_id: {
       type: DataTypes.UUID,
       references: {
-        model: 'Campaign',
+        model: 'campaigns',
         key: 'id'
       },
       comment: '活动ID'
@@ -105,7 +105,7 @@ module.exports = (sequelize, DataTypes) => {
     customer_id: {
       type: DataTypes.UUID,
       references: {
-        model: 'Customer',
+        model: 'customers',
         key: 'id'
       },
       comment: '客户ID'
@@ -113,7 +113,7 @@ module.exports = (sequelize, DataTypes) => {
     template_id: {
       type: DataTypes.UUID,
       references: {
-        model: 'EmailTemplate',
+        model: 'email_templates',
         key: 'id'
       },
       comment: '模板ID'

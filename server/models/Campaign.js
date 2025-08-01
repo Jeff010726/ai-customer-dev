@@ -48,6 +48,51 @@ module.exports = (sequelize, DataTypes) => {
       },
       comment: '搜索关键词'
     },
+    
+    // AI邮件生成配置
+    email_config: {
+      type: DataTypes.TEXT,
+      defaultValue: JSON.stringify({
+        product_description: '',
+        service_description: '',
+        writing_style: 'professional',
+        tone: 'friendly',
+        sender_name: '',
+        sender_title: '',
+        company_info: '',
+        call_to_action: '',
+        custom_prompt: ''
+      }),
+      get() {
+        const rawValue = this.getDataValue('email_config');
+        return rawValue ? JSON.parse(rawValue) : {};
+      },
+      set(value) {
+        this.setDataValue('email_config', JSON.stringify(value || {}));
+      },
+      comment: 'AI邮件生成配置'
+    },
+    
+    // 自动化配置
+    automation_config: {
+      type: DataTypes.TEXT,
+      defaultValue: JSON.stringify({
+        auto_search: false,
+        auto_send: false,
+        emails_per_hour: 10,
+        max_retries: 3,
+        search_interval_hours: 24,
+        duplicate_check: true
+      }),
+      get() {
+        const rawValue = this.getDataValue('automation_config');
+        return rawValue ? JSON.parse(rawValue) : {};
+      },
+      set(value) {
+        this.setDataValue('automation_config', JSON.stringify(value || {}));
+      },
+      comment: '自动化处理配置'
+    },
     search_filters: {
       type: DataTypes.TEXT,
       defaultValue: '{}',

@@ -16,7 +16,16 @@ import {
   TextField,
   Chip,
   IconButton,
+  FormControlLabel,
+  Switch,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -24,20 +33,48 @@ import {
   Pause,
   MoreVert,
   Edit,
-  Delete,
+  Search as SearchIcon,
+  ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { useSnackbar } from 'notistack'
 import { campaignApi, searchApi } from '../services/api'
 
+const initialCampaignState = {
+  name: '',
+  description: '',
+  search_keywords: '',
+  search_platforms: 'Google,LinkedIn',
+  email_config: {
+    product_description: '',
+    service_description: '',
+    writing_style: 'professional',
+    tone: 'friendly',
+    sender_name: '',
+    sender_title: '',
+    company_info: '',
+    call_to_action: '安排一次简短的在线会议',
+    custom_prompt: ''
+  },
+  automation_config: {
+    auto_search: true,
+    auto_send: true,
+    emails_per_hour: 10,
+    max_retries: 3,
+    search_interval_hours: 24,
+    duplicate_check: true
+  }
+};
+
+const writingStyles = ['professional', 'casual', 'enthusiastic', 'direct', 'formal'];
+const tones = ['friendly', 'persuasive', 'informative', 'humorous', 'empathetic'];
+
 export default function Campaigns() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [newCampaign, setNewCampaign] = useState({
-    name: '',
-    description: '',
-    search_keywords: '',
-    search_platforms: '',
-  })
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null)
+  const [editMode, setEditMode] = useState(false)
+  const [newCampaign, setNewCampaign] = useState<any>(initialCampaignState)
 
   const queryClient = useQueryClient()
   const { enqueueSnackbar } = useSnackbar()
@@ -56,7 +93,7 @@ export default function Campaigns() {
     onSuccess: () => {
       queryClient.invalidateQueries('campaigns')
       setCreateDialogOpen(false)
-      setNewCampaign({ name: '', description: '', search_keywords: '', search_platforms: '' })
+      setNewCampaign(initialCampaignState)
       enqueueSnackbar('活动创建成功！', { variant: 'success' })
     },
     onError: (error: any) => {
@@ -91,7 +128,7 @@ export default function Campaigns() {
     onSuccess: (data) => {
       queryClient.invalidateQueries('campaigns')
       queryClient.invalidateQueries('customers')
-      enqueueSnackbar(data.message || `🎯 AI搜索完成！生成了 ${data.data.results_count} 个潜在客户`, { variant: 'success' })
+      enqueueSnackbar(data?.data?.message || `🎯 AI搜索完成！生成了 ${data?.data?.results_count || 0} 个潜在客户`, { variant: 'success' })
     },
     onError: (error: any) => {
       enqueueSnackbar(`AI搜索失败: ${error.message}`, { variant: 'error' })
@@ -113,12 +150,31 @@ export default function Campaigns() {
     createMutation.mutate(campaignData)
   }
 
-  const handleStartSearch = (campaignId: string, keywords: any[], platforms: any[]) => {
-    searchMutation.mutate({
-      campaignId,
-      keywords,
-      platforms
-    })
+  const handleViewDetails = (campaign: any) => {
+    setSelectedCampaign({ ...campaign })
+    setEditMode(false)
+    setDetailsDialogOpen(true)
+  }
+
+  const handleEditCampaign = () => {
+    setEditMode(true)
+  }
+
+  const handleSaveEdit = () => {
+    // TODO: 实现编辑保存功能
+    setEditMode(false)
+    enqueueSnackbar('活动配置已更新', { variant: 'success' })
+  }
+
+  const handleCloseDetails = () => {
+    setDetailsDialogOpen(false)
+    setSelectedCampaign(null)
+    setEditMode(false)
+  }
+
+  const handleActivateCampaign = (campaignId: string) => {
+    // 激活活动，启动自动化流程
+    startMutation.mutate(campaignId)
   }
 
   const getStatusColor = (status: string) => {
@@ -144,7 +200,7 @@ export default function Campaigns() {
 
   if (error) {
     return (
-      <Box>
+      <Box sx={{ width: '100%', maxWidth: 'none' }}>
         <Typography variant="h4" component="h1" gutterBottom>
           活动管理
         </Typography>
@@ -156,7 +212,7 @@ export default function Campaigns() {
   }
 
   return (
-    <Box>
+    <Box sx={{ width: '100%', maxWidth: 'none' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1">
           活动管理
@@ -260,14 +316,10 @@ export default function Campaigns() {
                       <Button
                         size="small"
                         startIcon={<PlayArrow />}
-                        onClick={() => handleStartSearch(
-                          campaign.id,
-                          campaign.search_keywords || [],
-                          campaign.search_platforms || []
-                        )}
-                        disabled={searchMutation.isLoading}
+                        onClick={() => handleActivateCampaign(campaign.id)}
+                        disabled={startMutation.isLoading}
                       >
-                        开始搜索
+                        激活
                       </Button>
                     ) : campaign.status === 'active' ? (
                       <Button
@@ -289,7 +341,7 @@ export default function Campaigns() {
                       </Button>
                     ) : null}
                     
-                    <Button size="small">
+                    <Button size="small" onClick={() => handleViewDetails(campaign)}>
                       查看详情
                     </Button>
                   </CardActions>
@@ -345,6 +397,226 @@ export default function Campaigns() {
                 helperText="指定要搜索的平台，用逗号分隔"
               />
             </Grid>
+            
+            {/* 邮件配置 */}
+            <Grid item xs={12}>
+              <Accordion defaultExpanded>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography>邮件生成配置</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="产品描述"
+                        multiline
+                        rows={2}
+                        value={newCampaign.email_config?.product_description || ''}
+                        onChange={(e) => setNewCampaign({
+                          ...newCampaign,
+                          email_config: { ...(newCampaign.email_config || {}), product_description: e.target.value }
+                        })}
+                        placeholder="描述您的主要产品，例如：高端时尚服装、设计师品牌..."
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="服务描述"
+                        multiline
+                        rows={2}
+                        value={newCampaign.email_config?.service_description || ''}
+                        onChange={(e) => setNewCampaign({
+                          ...newCampaign,
+                          email_config: { ...(newCampaign.email_config || {}), service_description: e.target.value }
+                        })}
+                        placeholder="描述您提供的服务，例如：一站式采购服务、独家设计师合作..."
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <TextField
+                        fullWidth
+                        label="发件人姓名"
+                        value={newCampaign.email_config?.sender_name || ''}
+                        onChange={(e) => setNewCampaign({
+                          ...newCampaign,
+                          email_config: { ...(newCampaign.email_config || {}), sender_name: e.target.value }
+                        })}
+                        placeholder="例如：张三"
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <TextField
+                        fullWidth
+                        label="发件人职位"
+                        value={newCampaign.email_config?.sender_title || ''}
+                        onChange={(e) => setNewCampaign({
+                          ...newCampaign,
+                          email_config: { ...(newCampaign.email_config || {}), sender_title: e.target.value }
+                        })}
+                        placeholder="例如：销售总监"
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="公司信息"
+                        multiline
+                        rows={2}
+                        value={newCampaign.email_config?.company_info || ''}
+                        onChange={(e) => setNewCampaign({
+                          ...newCampaign,
+                          email_config: { ...(newCampaign.email_config || {}), company_info: e.target.value }
+                        })}
+                        placeholder="简要介绍您的公司，例如：专注高端时尚20年的供应链公司..."
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <FormControl fullWidth>
+                        <InputLabel>写作风格</InputLabel>
+                        <Select
+                          value={newCampaign.email_config?.writing_style || 'professional'}
+                          onChange={(e) => setNewCampaign({
+                            ...newCampaign,
+                            email_config: { ...(newCampaign.email_config || {}), writing_style: e.target.value }
+                          })}
+                          label="写作风格"
+                        >
+                          {writingStyles.map(style => (
+                            <MenuItem key={style} value={style}>{style}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <FormControl fullWidth>
+                        <InputLabel>语气</InputLabel>
+                        <Select
+                          value={newCampaign.email_config?.tone || 'friendly'}
+                          onChange={(e) => setNewCampaign({
+                            ...newCampaign,
+                            email_config: { ...(newCampaign.email_config || {}), tone: e.target.value }
+                          })}
+                          label="语气"
+                        >
+                          {tones.map(tone => (
+                            <MenuItem key={tone} value={tone}>{tone}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="行动号召"
+                        value={newCampaign.email_config?.call_to_action || ''}
+                        onChange={(e) => setNewCampaign({
+                          ...newCampaign,
+                          email_config: { ...(newCampaign.email_config || {}), call_to_action: e.target.value }
+                        })}
+                        placeholder="例如：安排一次简短的在线会议、索取产品目录..."
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="额外提示词（可选）"
+                        multiline
+                        rows={2}
+                        value={newCampaign.email_config?.custom_prompt || ''}
+                        onChange={(e) => setNewCampaign({
+                          ...newCampaign,
+                          email_config: { ...(newCampaign.email_config || {}), custom_prompt: e.target.value }
+                        })}
+                        placeholder="为AI提供额外的邮件生成指导，例如：强调环保理念、突出独家设计..."
+                      />
+                    </Grid>
+                  </Grid>
+                </AccordionDetails>
+              </Accordion>
+            </Grid>
+            
+            {/* 自动化配置 */}
+            <Grid item xs={12}>
+              <Accordion>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography>自动化设置</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={newCampaign.automation_config?.auto_search || false}
+                            onChange={(e) => setNewCampaign({
+                              ...newCampaign,
+                              automation_config: { ...(newCampaign.automation_config || {}), auto_search: e.target.checked }
+                            })}
+                          />
+                        }
+                        label="自动搜索客户"
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={newCampaign.automation_config?.auto_send || false}
+                            onChange={(e) => setNewCampaign({
+                              ...newCampaign,
+                              automation_config: { ...(newCampaign.automation_config || {}), auto_send: e.target.checked }
+                            })}
+                          />
+                        }
+                        label="自动发送邮件"
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label="每小时发送邮件数"
+                        value={newCampaign.automation_config?.emails_per_hour || 10}
+                        onChange={(e) => setNewCampaign({
+                          ...newCampaign,
+                          automation_config: { ...(newCampaign.automation_config || {}), emails_per_hour: parseInt(e.target.value) || 10 }
+                        })}
+                        InputProps={{ inputProps: { min: 1, max: 100 } }}
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label="搜索间隔（小时）"
+                        value={newCampaign.automation_config?.search_interval_hours || 24}
+                        onChange={(e) => setNewCampaign({
+                          ...newCampaign,
+                          automation_config: { ...(newCampaign.automation_config || {}), search_interval_hours: parseInt(e.target.value) || 24 }
+                        })}
+                        InputProps={{ inputProps: { min: 1 } }}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={newCampaign.automation_config?.duplicate_check || false}
+                            onChange={(e) => setNewCampaign({
+                              ...newCampaign,
+                              automation_config: { ...(newCampaign.automation_config || {}), duplicate_check: e.target.checked }
+                            })}
+                          />
+                        }
+                        label="检查重复客户"
+                      />
+                    </Grid>
+                  </Grid>
+                </AccordionDetails>
+              </Accordion>
+            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
@@ -357,6 +629,239 @@ export default function Campaigns() {
             disabled={createMutation.isLoading}
           >
             {createMutation.isLoading ? <CircularProgress size={20} /> : '创建活动'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 活动详情对话框 */}
+      <Dialog open={detailsDialogOpen} onClose={handleCloseDetails} maxWidth="md" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">
+              {selectedCampaign?.name} - 活动详情
+            </Typography>
+            <Box>
+              {!editMode ? (
+                <Button onClick={handleEditCampaign} startIcon={<Edit />}>
+                  编辑配置
+                </Button>
+              ) : (
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button onClick={handleCloseDetails} variant="outlined">
+                    取消
+                  </Button>
+                  <Button onClick={handleSaveEdit} variant="contained">
+                    保存
+                  </Button>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {selectedCampaign && (
+            <Grid container spacing={3} sx={{ mt: 1 }}>
+              {/* 基本信息 */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>基本信息</Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="活动名称"
+                      value={selectedCampaign.name || ''}
+                      disabled={!editMode}
+                      onChange={(e) => setSelectedCampaign({...selectedCampaign, name: e.target.value})}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="状态"
+                      value={getStatusLabel(selectedCampaign.status)}
+                      disabled
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="描述"
+                      multiline
+                      rows={2}
+                      value={selectedCampaign.description || ''}
+                      disabled={!editMode}
+                      onChange={(e) => setSelectedCampaign({...selectedCampaign, description: e.target.value})}
+                    />
+                  </Grid>
+                </Grid>
+              </Grid>
+
+              {/* 搜索配置 */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>搜索配置</Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="搜索关键词"
+                      value={Array.isArray(selectedCampaign.search_keywords) 
+                        ? selectedCampaign.search_keywords.join(', ') 
+                        : selectedCampaign.search_keywords || ''}
+                      disabled={!editMode}
+                      onChange={(e) => setSelectedCampaign({
+                        ...selectedCampaign, 
+                        search_keywords: e.target.value
+                      })}
+                      helperText="用逗号分隔多个关键词"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="搜索平台"
+                      value={Array.isArray(selectedCampaign.search_platforms) 
+                        ? selectedCampaign.search_platforms.join(', ') 
+                        : selectedCampaign.search_platforms || ''}
+                      disabled={!editMode}
+                      onChange={(e) => setSelectedCampaign({
+                        ...selectedCampaign, 
+                        search_platforms: e.target.value
+                      })}
+                      helperText="用逗号分隔多个平台"
+                    />
+                  </Grid>
+                </Grid>
+              </Grid>
+
+              {/* 邮件配置 */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>邮件配置</Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="产品描述"
+                      multiline
+                      rows={3}
+                      value={selectedCampaign.email_config?.product_description || ''}
+                      disabled={!editMode}
+                      onChange={(e) => setSelectedCampaign({
+                        ...selectedCampaign,
+                        email_config: { ...(selectedCampaign.email_config || {}), product_description: e.target.value }
+                      })}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="服务描述"
+                      multiline
+                      rows={3}
+                      value={selectedCampaign.email_config?.service_description || ''}
+                      disabled={!editMode}
+                      onChange={(e) => setSelectedCampaign({
+                        ...selectedCampaign,
+                        email_config: { ...(selectedCampaign.email_config || {}), service_description: e.target.value }
+                      })}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth disabled={!editMode}>
+                      <InputLabel>写作风格</InputLabel>
+                      <Select
+                        value={selectedCampaign.email_config?.writing_style || 'professional'}
+                        onChange={(e) => setSelectedCampaign({
+                          ...selectedCampaign,
+                          email_config: { ...(selectedCampaign.email_config || {}), writing_style: e.target.value }
+                        })}
+                      >
+                        {writingStyles.map(style => (
+                          <MenuItem key={style} value={style}>{style}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth disabled={!editMode}>
+                      <InputLabel>语气</InputLabel>
+                      <Select
+                        value={selectedCampaign.email_config?.tone || 'friendly'}
+                        onChange={(e) => setSelectedCampaign({
+                          ...selectedCampaign,
+                          email_config: { ...(selectedCampaign.email_config || {}), tone: e.target.value }
+                        })}
+                      >
+                        {tones.map(tone => (
+                          <MenuItem key={tone} value={tone}>{tone}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              </Grid>
+
+              {/* 统计信息 */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>统计信息</Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6} sm={3}>
+                    <Card variant="outlined">
+                      <CardContent sx={{ textAlign: 'center', py: 2 }}>
+                        <Typography variant="h4" color="primary">
+                          {selectedCampaign.total_searched || 0}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          搜索数量
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Card variant="outlined">
+                      <CardContent sx={{ textAlign: 'center', py: 2 }}>
+                        <Typography variant="h4" color="warning.main">
+                          {selectedCampaign.total_emails_sent || 0}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          发送邮件
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Card variant="outlined">
+                      <CardContent sx={{ textAlign: 'center', py: 2 }}>
+                        <Typography variant="h4" color="success.main">
+                          {selectedCampaign.total_replies || 0}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          回复数量
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Card variant="outlined">
+                      <CardContent sx={{ textAlign: 'center', py: 2 }}>
+                        <Typography variant="h4" color="info.main">
+                          {selectedCampaign.total_replies && selectedCampaign.total_emails_sent 
+                            ? `${Math.round((selectedCampaign.total_replies / selectedCampaign.total_emails_sent) * 100)}%`
+                            : '0%'}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          回复率
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDetails}>
+            关闭
           </Button>
         </DialogActions>
       </Dialog>

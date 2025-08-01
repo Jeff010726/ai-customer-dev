@@ -27,6 +27,7 @@ const EmailTemplate = require('./EmailTemplate')(sequelize, Sequelize.DataTypes)
 const SearchResult = require('./SearchResult')(sequelize, Sequelize.DataTypes);
 const Setting = require('./Setting')(sequelize, Sequelize.DataTypes);
 const Report = require('./Report')(sequelize, Sequelize.DataTypes);
+const Task = require('./Task')(sequelize, Sequelize.DataTypes);
 
 // 定义模型关联
 const models = {
@@ -36,7 +37,8 @@ const models = {
   EmailTemplate,
   SearchResult,
   Setting,
-  Report
+  Report,
+  Task
 };
 
 // 设置模型关联

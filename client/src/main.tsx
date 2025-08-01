@@ -42,6 +42,22 @@ const theme = createTheme({
       '"Segoe UI Symbol"',
     ].join(','),
   },
+  components: {
+    // 确保Container组件默认不限制最大宽度
+    MuiContainer: {
+      defaultProps: {
+        maxWidth: false,
+      },
+    },
+    // 确保Box组件有合适的默认样式
+    MuiBox: {
+      styleOverrides: {
+        root: {
+          boxSizing: 'border-box',
+        },
+      },
+    },
+  },
 })
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

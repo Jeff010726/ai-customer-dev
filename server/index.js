@@ -14,6 +14,7 @@ const emailRoutes = require('./routes/emails');
 const searchRoutes = require('./routes/search');
 const settingsRoutes = require('./routes/settings');
 const reportsRoutes = require('./routes/reports');
+const tasksRoutes = require('./routes/tasks');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -43,6 +44,7 @@ app.use('/api/emails', emailRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/tasks', tasksRoutes);
 
 // 超简单健康检查 - Railway专用
 app.get('/api/health', (req, res) => {
@@ -99,13 +101,17 @@ async function startServer() {
     await sequelize.authenticate();
     logger.info('数据库连接成功');
     
-    // 同步数据库模型 - Railway优化
-    await sequelize.sync({ 
-      force: false,  // 生产环境不强制重建
-      alter: process.env.NODE_ENV === 'development',
-      logging: false  // Railway环境减少日志
+    // 同步数据库模型
+        await sequelize.sync({
+      force: false,  // 恢复正常模式，不再强制重建
+      alter: process.env.NODE_ENV === 'development',  // 开发环境允许修改表结构
+      logging: false  // 减少日志输出
     });
     logger.info('数据库模型同步完成');
+    
+    // 启动任务调度器
+    const taskScheduler = require('./services/taskScheduler');
+    taskScheduler.start();
     
     // 启动服务器 - Railway优化
     const server = app.listen(PORT, HOST, () => {
@@ -113,6 +119,7 @@ async function startServer() {
       console.log(`📊 Health check: /health`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`💾 Database: ${process.env.DATABASE_URL || 'SQLite'}`);
+      console.log(`📅 任务调度器已启动`);
       
       // Railway健康检查响应
       if (process.env.NODE_ENV === 'production') {
@@ -123,24 +130,27 @@ async function startServer() {
     // 设置超时
     server.timeout = 30000;
     
+    // 优雅关闭时停止任务调度器
+    const gracefulShutdown = async () => {
+      logger.info('正在关闭服务器...');
+      taskScheduler.stop();
+      server.close(() => {
+        logger.info('服务器已关闭');
+      });
+      await sequelize.close();
+      process.exit(0);
+    };
+    
+    process.on('SIGTERM', gracefulShutdown);
+    process.on('SIGINT', gracefulShutdown);
+    
   } catch (error) {
     logger.error('服务器启动失败:', error);
     process.exit(1);
   }
 }
 
-// 优雅关闭
-process.on('SIGTERM', async () => {
-  logger.info('收到SIGTERM信号，正在关闭服务器...');
-  await sequelize.close();
-  process.exit(0);
-});
 
-process.on('SIGINT', async () => {
-  logger.info('收到SIGINT信号，正在关闭服务器...');
-  await sequelize.close();
-  process.exit(0);
-});
 
 // 未捕获的异常处理
 process.on('uncaughtException', (error) => {
